@@ -269,6 +269,7 @@ ggplot(subAfMelted, aes(x = variable, y = log10(value))) +
 dev.off()
 ```
 <img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/frq_boxplot.PNG?token=AQUBCE6GOCAU6CL4WSOCQYDBBLWK2" width="800" height="400">
+
 ```R
 #### looking at AUC performance
 library(pROC)
