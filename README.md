@@ -1,4 +1,4 @@
-# clinvar
+# ClinVar variant class prediction
 
 To classify clinvar variants into two diffrent groups ("conflict", and "no-conflict") based on the variant annotations (original clinvar annotation + VEP annotation)
 
@@ -20,3 +20,13 @@ To classify clinvar variants into two diffrent groups ("conflict", and "no-confl
 
 
 
+How many variants in each class:
+
+Review status pie chart                 | 
+:----------------------------------------------------------------------------------------------------------------:|
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/class_dist.PNG" width="800" height="400"> |
+
+Receiving more submissions from the community, variants in the class "criteria provided, single submitter" will turn into one of the "criteria provided, multiple submitter, no conflicts" or "criteria provided, conflicting interpretations" classes. To find out which feature  of variants may contibute to this conversion, I am doing this project.
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
