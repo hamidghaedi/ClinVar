@@ -82,4 +82,4 @@ table(subClin$class)
 #### Analysis: allele frequecny features
 #### Analysis: variant consequnce annotation
 #### Pathogenicity prediction scores
-#### Conservation 
+#### Conservation scores
