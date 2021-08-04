@@ -352,5 +352,255 @@ ggplot(afSubPopMelted, aes(x = variable, y = log10(value))) +
 <img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/sub_pop_allele-freq.PNG?token=AQUBCE5KFTPLRQTIWIFWGGLBBLWS4" width="800" height="400">
 
 #### Analysis: variant consequnce annotation
+```R
+# consequences
+unique(subClin$Consequence)
+
+# [1] "missense_variant"                                                                                       
+# [2] "synonymous_variant"                                                                                     
+# [3] "intron_variant"                                                                                         
+# [4] "splice_region_variant,synonymous_variant"                                                               
+# [5] "splice_region_variant,intron_variant"                                                                   
+# [6] "3_prime_UTR_variant"                                                                                    
+# [7] "inframe_insertion"                                                                                      
+# [8] "frameshift_variant"                                                                                     
+# [9] "downstream_gene_variant"                                                                                
+# [10] "5_prime_UTR_variant"                                                                                    
+# [11] "inframe_deletion"                                                                                       
+# [12] "start_lost"                                                                                             
+# [13] "missense_variant,splice_region_variant"                                                                 
+# [14] NA                                                                                                       
+# [15] "splice_donor_variant"                                                                                   
+# [16] "stop_gained"                                                                                            
+# [17] "stop_gained,splice_region_variant"                                                                      
+# [18] "upstream_gene_variant"                                                                                  
+# [19] "splice_acceptor_variant"                                                                                
+# [20] "splice_region_variant,5_prime_UTR_variant"                                                              
+# [21] "frameshift_variant,splice_region_variant"                                                               
+# [22] "frameshift_variant,stop_lost"                                                                           
+# [23] "start_lost,5_prime_UTR_variant"                                                                         
+# [24] "frameshift_variant,start_lost"                                                                          
+# [25] "splice_region_variant,intron_variant,NMD_transcript_variant"                                            
+# [26] "intron_variant,NMD_transcript_variant"                                                                  
+# [27] "missense_variant,NMD_transcript_variant"                                                                
+# [28] "synonymous_variant,NMD_transcript_variant"                                                              
+# [29] "3_prime_UTR_variant,NMD_transcript_variant"                                                             
+# [30] "splice_region_variant,3_prime_UTR_variant,NMD_transcript_variant"                                       
+# [31] "missense_variant,splice_region_variant,NMD_transcript_variant"                                          
+# [32] "frameshift_variant,NMD_transcript_variant"                                                              
+# [33] "stop_gained,NMD_transcript_variant"                                                                     
+# [34] "splice_region_variant,synonymous_variant,NMD_transcript_variant"                                        
+# [35] "splice_acceptor_variant,NMD_transcript_variant"                                                         
+# [36] "splice_donor_variant,intron_variant"                                                                    
+# [37] "splice_acceptor_variant,intron_variant"                                                                 
+# [38] "stop_gained,frameshift_variant"                                                                         
+# [39] "protein_altering_variant"                                                                               
+# [40] "splice_donor_variant,coding_sequence_variant,intron_variant"                                            
+# [41] "stop_lost"                                                                                              
+# [42] "inframe_deletion,splice_region_variant"                                                                 
+# [43] "splice_donor_variant,coding_sequence_variant"                                                           
+# [44] "splice_acceptor_variant,coding_sequence_variant"                                                        
+# [45] "splice_acceptor_variant,coding_sequence_variant,intron_variant"                                         
+# [46] "splice_donor_variant,NMD_transcript_variant"                                                            
+# [47] "stop_retained_variant"                                                                                  
+# [48] "stop_gained,inframe_deletion"                                                                           
+# [49] "stop_gained,frameshift_variant,splice_region_variant"                                                   
+# [50] "stop_lost,3_prime_UTR_variant"                                                                          
+# [51] "frameshift_variant,stop_retained_variant"                                                               
+# [52] "inframe_insertion,NMD_transcript_variant"                                                               
+# [53] "inframe_deletion,NMD_transcript_variant"                                                                
+# [54] "intron_variant,non_coding_transcript_variant"                                                           
+# [55] "inframe_insertion,splice_region_variant"                                                                
+# [56] "start_lost,splice_region_variant"                                                                       
+# [57] "5_prime_UTR_variant,NMD_transcript_variant"                                                             
+# [58] "non_coding_transcript_exon_variant"                                                                     
+# [59] "splice_donor_variant,5_prime_UTR_variant,intron_variant"                                                
+# [60] "stop_gained,protein_altering_variant"                                                                   
+# [61] "coding_sequence_variant,intron_variant"                                                                 
+# [62] "protein_altering_variant,splice_region_variant"                                                         
+# [63] "splice_region_variant,coding_sequence_variant,intron_variant"                                           
+# [64] "stop_retained_variant,3_prime_UTR_variant"                                                              
+# [65] "splice_acceptor_variant,intron_variant,NMD_transcript_variant"                                          
+# [66] "splice_donor_variant,3_prime_UTR_variant,NMD_transcript_variant"                                        
+# [67] "splice_donor_variant,splice_acceptor_variant,coding_sequence_variant,intron_variant"                    
+# [68] "splice_donor_variant,coding_sequence_variant,5_prime_UTR_variant,intron_variant,NMD_transcript_variant" 
+# [69] "protein_altering_variant,NMD_transcript_variant"                                                        
+# [70] "start_lost,NMD_transcript_variant"                                                                      
+# [71] "splice_region_variant,non_coding_transcript_exon_variant"                                               
+# [72] "stop_gained,inframe_insertion"                                                                          
+# [73] "frameshift_variant,splice_region_variant,NMD_transcript_variant"                                        
+# [74] "splice_region_variant,3_prime_UTR_variant"                                                              
+# [75] "splice_donor_variant,splice_acceptor_variant,coding_sequence_variant,5_prime_UTR_variant,intron_variant"
+# [76] "transcript_ablation" 
+
+tmp = data.frame(unclass(table(subClin$class, subClin$Consequence)))
+rownames(tmp) <- c("noConflict", "conflict")
+tmp = data.frame(t(tmp))
+
+tmp$conflict_precent = round(tmp$conflict/sum(tmp$conflict)*100,2)
+tmp$noConflict_precent = round(tmp$noConflict/sum(tmp$noConflict)*100,2)
+
+filtTmp = tmp[tmp$conflict_precent >= 1 | tmp$noConflict_precent >= 1, ]
+filtTmp = filtTmp[, c(-1,-2)]
+rownames(filtTmp)[1] <- "3_prime_UTR_variant"
+
+chisq <- chisq.test(filtTmp)
+chisq
+
+library(corrplot)
+png(filename = "~/clinvar/conseq.png", width = 7, height = 10, units = "in", res = 300)
+corrplot::corrplot(chisq$residuals, is.cor = FALSE, cl.pos = 'n')
+dev.off()
+```
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/conseq.png?token=AQUBCE64NO4HCEAQ24OEB5DBBLXFI" width="500" height="800">
+
+```R
+# IMPACT
+
+table(subClin$class, subClin$IMPACT)
+
+tmp = data.frame(unclass(table(subClin$class, subClin$IMPACT)))
+tmp = data.frame(t(tmp))
+
+tmp$conflict_precent = round(tmp$conflict/sum(tmp$conflict)*100,2)
+tmp$noConflict_precent = round(tmp$noConflict/sum(tmp$noConflict)*100,2)
+
+
+chisq <- chisq.test(tmp[, c(1:2)])
+chisq
+
+png(filename = "~/clinvar/impact.png", width = 7, height = 10, units = "in", res = 300)
+corrplot::corrplot(chisq$residuals, is.cor = FALSE, cl.pos = 'n')
+dev.off()
+```
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/impact.png?token=AQUBCE4KBL6DJBTX4SYADVTBBLXNE" width="500" height="600">
+
+```R
+# transcript length
+
+subClin <- readRDS("~/clinvar/subClin.rds")
+subClin <- data.frame(subClin)
+subClin$class = ifelse(subClin$class == 0, "noConflict", "conflict")
+
+
+trs = unique(subClin$Feature)
+
+library(biomaRt)
+
+mart <- useDataset("hsapiens_gene_ensembl", useMart("ensembl"))
+grep("length", listAttributes(mart = mart)[,1])
+atr = c("ensembl_transcript_id_version", "transcript_start", "transcript_end", "transcript_length")
+flts ="ensembl_transcript_id_version" 
+
+transMart = getBM(filters= flts, 
+                  attributes= atr,
+                  values=trs, 
+                  mart= mart)
+names(transMart)[1] <- "Feature"
+
+tmp = subClin[, c(30, 38,40,41,44,45,46)]
+tmp = dplyr::left_join(tmp, transMart)
+# tmp = tmp[,c(1,3,4,7)]
+tmp = tmp[!is.na(tmp$transcript_length),]
+
+## Calculate bin breaks for numeric variables with respect to their relationships with the outcome variable class
+bins =scorecard::woebin(tmp[, c('transcript_length', 'class')], y = 'class', positive = 'conflict')
+
+# visualization
+scorecard::woebin_plot(bins$transcript_length)$transcript_length
+
+tmp = tmp[tmp$transcript_length < 40000, ]
+
+t.test(transcript_length ~ class, data = tmp, alternative = "two.sided", var.equal = FALSE)
+
+
+library(ggplot2)
+png(filename = "~/clinvar/transcript_length.png", width = 7, height = 10, units = "in", res = 300)
+ggplot(tmp, aes(x = as.factor(class), y = log10(transcript_length))) + 
+  geom_boxplot(aes(fill = class), position = position_dodge(0.9)) +
+  scale_fill_manual(values = c("#999999", "#E69F00")) + 
+  theme_bw()
+dev.off()
+```
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/transcript_length.png?token=AQUBCE4I2PWFUIDDFO6UIEDBBLX4G" width="400" height="500">
+
+```R
+# variant location in exons
+
+table(subClin$EXON == "-")
+
+# FALSE   TRUE 
+# 153639  33854
+
+#tmp = subClin[, c(30, 40, 41)]
+tmp = tmp[!is.na(tmp$EXON),]
+
+
+tmp$ratio = tmp$EXON
+tmp$ratio = ifelse(tmp$ratio != "-", tmp$ratio, tmp$INTRON)
+tmp = cbind(tmp, stringr::str_split_fixed(tmp$ratio, "/", 2))
+names(tmp)[c(12:13)] <- c("nExon", "tExon")
+tmp$nratio = as.numeric(tmp$nExon)/as.numeric(tmp$tExon)
+# those variants with "-" as Exon and Intron will be removed since they generate NA
+# those variants encompass more than one Exon/Intron will be removed since they generate NA
+colSums(is.na(tmp))
+# class   EXON INTRON  ratio  nExon  tExon nratio 
+# 0       0      0      0      0      0     7698
+tmp = tmp[!is.na(tmp$nratio),]
+
+ggplot(tmp, aes(x = as.factor(class), y = nratio)) + 
+  geom_boxplot(aes(fill = class), position = position_dodge(0.9)) +
+  scale_fill_manual(values = c("#999999", "#E69F00")) + 
+  theme_bw()
+
+# discertization visualization
+## Import libraries
+library(scorecard)
+library(ggplot2)
+
+# read more on discertization : https://nextjournal.com/eda/discretize-cont-var
+## Calculate bin breaks for numeric variables with respect to their relationships with the outcome variable class
+bins = scorecard::woebin(tmp[, c('nratio', 'class')], y = 'class', positive = 'conflict')
+
+# visualization
+scorecard::woebin_plot(bins$nratio)$nratio
+# interpertaion for the graph: highest probability for conflicting group is found in bin 0.96 and greater
+
+
+#############################other position based annotation#################################################
+tmp$cDNA_position = as.numeric(tmp$cDNA_position)
+tmp$CDS_position = as.numeric(tmp$CDS_position)
+tmp$Protein_position = as.numeric(tmp$Protein_position)
+tmp = tmp[!is.na(tmp$cDNA_position),]
+
+bins =scorecard::woebin(tmp[, c('cDNA_position','CDS_position','Protein_position','class')], y = 'class', positive = 'conflict')
+# visualization
+scorecard::woebin_plot(bins$cDNA_position)
+scorecard::woebin_plot(bins$CDS_position)
+scorecard::woebin_plot(bins$Protein_position)
+
+## calculate correlation between position based metrics
+summary(tmp)
+
+selc = c("cDNA_position","CDS_position","Protein_position","transcript_length", "nratio")
+
+tmp = tmp[, selc]
+for (i in 1:5){
+  tmp[,i] <- as.numeric(tmp[,i])
+}
+
+tmp = na.omit(tmp)
+
+# calculate correlation matrix
+res <- cor(tmp)
+
+png(filename = "~/clinvar/postion_metrics_corrplot.png", width = 7, height = 10, units = "in", res = 300)
+corrplot::corrplot(res, type = "upper", order = "hclust", addCoef.col = 'black', 
+         tl.col = "black", tl.srt = 45)
+dev.off()
+```
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/postion_metrics_corrplot.png?token=AQUBCEY6TJQZ34E5DTDGBR3BBLYJK" width="400" height="500">
+
+
 #### Pathogenicity prediction scores
 #### Conservation scores
