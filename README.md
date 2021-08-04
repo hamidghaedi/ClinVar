@@ -2,7 +2,7 @@
 
 To classify clinvar variants into two diffrent groups ("conflict", and "no-conflict") based on the variant annotations (original clinvar annotation + VEP annotation)
 
-### Summary onthe variants review status in ClinVar (*clinvar_20210619.vcf.gz*)
+### Summary on the variants review status in ClinVar (*clinvar_20210619.vcf.gz*)
 
 
 
