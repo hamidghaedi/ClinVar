@@ -7,7 +7,7 @@ To classify clinvar variants into two diffrent groups ("conflict", and "no-confl
 
 
 |     stars       | Review status  | number of variant   |Description |
-| :-------------- |:--------------:|--------------------:|:----------|
+| :-------------- |:--------------|:--------------------|:----------|
 |four	 | practice guideline	                                     |51  |    practice guideline |
 |three	 | reviewed by expert panel	                               |11660 |  reviewed by expert panel |
 |two	   |criteria provided, multiple submitter, no conflicts	  |138617  |  Two or more submitters with assertion criteria and evidence (or a public contact) provided the same interpretation. |
