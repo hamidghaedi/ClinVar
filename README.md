@@ -603,4 +603,109 @@ dev.off()
 
 
 #### Pathogenicity prediction scores
+
+The version of dbNSFP that VEP  used to annotate ClinVar file (version 4)  compiles prediction scores from 37 prediction algorithms (SIFT, SIFT4G, Polyphen2-HDIV, Polyphen2-HVAR, LRT, MutationTaster2, MutationAssessor, FATHMM, MetaSVM, MetaLR, CADD, CADD_hg19, VEST4, PROVEAN, FATHMM-MKL coding, FATHMM-XF coding, fitCons x 4, LINSIGHT, DANN, GenoCanyon, Eigen, Eigen-PC, M-CAP, REVEL, MutPred, MVP, MPC, PrimateAI, GEOGEN2, BayesDel_addAF, BayesDel_noAF, ClinPred, LIST-S2, ALoFT). Since different score has a different scaling system, the dbNSFP developers have created a rank score for each score so that it is comparable between scores. This can help with easier interpertaion of the result. The rank score has a scale 0 to 1 and shows the percentage of scores that are less damaging in dbNSFP, e.g., a rank score of 0.9 means the top 10% most damaging.
+
+Here I first tried to identify columns in the dataset that provide data on pathogenecity prediction score, visualized scores between groups , calculated correlation matrix to remove highly correlated features(r > 0.7) and again visualized those selected feature. 
+
+```R
+# pathogenicity  score 
+
+subClin <- readRDS("~/clinvar/subClin.rds")
+subClin <- data.frame(subClin)
+subClin$class = ifelse(subClin$class == 0, "noConflict", "conflict")
+
+#knowing pathogeneicty prediction columns are providing a kind of "score", so :
+pathPredict = c(pathPredict,colnames(subClin)[grepl("score", colnames(subClin))] )
+
+patDat = subClin[, which(names(subClin) %in% pathPredict)]
+
+# converting sift and polyphen to numbers
+df = cbind(t(data.frame(strsplit(patDat$SIFT, "\\("))), t(data.frame(strsplit(patDat$PolyPhen, "\\("))))
+colnames(df) <- c("SIFT_Pred", "SIFT_score", "PolyPhen_Pred", "PolyPhen_score")
+df = data.frame(df)
+df$SIFT_score = as.numeric(sub("\\)", "", df$SIFT_score))
+df$PolyPhen_score = as.numeric(sub("\\)", "", df$PolyPhen_score))
+rownames(df) <- NULL
+
+# removing original SIFT and polyPhen columns
+patDat = cbind(patDat, df)
+patDat = patDat[, -c(2,3)]
+
+
+# replacing "-" with NA
+patDat[patDat == "-"] <- NA
+
+# counting  NAs and reducing data frame size by NA numbers
+patDat = patDat[, colSums(is.na(patDat)) <= 150000]
+patDat = patDat[rowSums(is.na(patDat)) <= 50, ]
+
+
+# droping off columns that have more than one number/chr
+patDat = patDat[, -c(12,17,28,36,44,48,55,69,71)]
+
+# knowing type of data
+sapply(patDat, mode)
+
+# setting datatype as numeric
+patDat[, -1] = sapply(patDat[, -1], as.numeric)
+
+# identifying conservation score columns
+consScore = c("SiPhy_29way_logOdds_rankscore", "bStatistic_converted_rankscore", "integrated_fitCons_score",
+              "phastCons100way_vertebrate_rankscore", "phastCons17way_primate_rankscore",
+              "phastCons30way_mammalian_rankscore","phyloP100way_vertebrate_rankscore",
+              "phyloP17way_primate_rankscore", "phyloP30way_mammalian_rankscore",
+              "GERP.._RS_rankscore", "GM12878_fitCons_rankscore", "GM12878_fitCons_score",
+              "H1.hESC_fitCons_rankscore", "H1.hESC_fitCons_score", "HUVEC_fitCons_rankscore",
+              "HUVEC_fitCons_score", "integrated_fitCons_rankscore")
+
+# removing conservation scores for now
+patDat = patDat[, -which(colnames(patDat) %in% consScore)]
+
+# visualization
+library(corrplot)
+library(RColorBrewer)
+library(ggplot2)
+
+# distribution
+
+plotDf <- reshape2::melt(patDat, id.vars = 'class')
+
+png(filename = "~/clinvar/path_predict_dist.png", width = 17, height = 15, units = "in", res = 300)
+ggplot(plotDf, aes(x=variable, y=value, fill=class)) + 
+  geom_boxplot(outlier.colour=NA) +
+  scale_fill_manual(values = c("#999999", "#E69F00")) +
+  facet_wrap(~variable, scale="free")
+dev.off()
+```
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/path_predict_dist.png?token=AQUBCE7XEALJ7EMOXC4RHKDBCM56O" width="500" height="500">
+
+```R
+#correlation
+M <-cor(patDat[, -1], use = "complete.obs")
+png(filename = "~/clinvar/path_predict_corrplot.png", width = 15, height = 15, units = "in", res = 300)
+corrplot(M, type="upper", order="hclust",
+         col=brewer.pal(n=8, name="RdYlBu"))
+dev.off()
+```
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/path_predict_corrplot.png?token=AQUBCE7T3DRZ6HUNSPLTRYDBCM5VG" width="500" height="500">
+
+```R
+# Keeping only one variable out of pairs which show cor > 0.7
+highlyCorrelated <- caret::findCorrelation(M, cutoff=(0.7),verbose = FALSE)
+important_var=colnames(patDat[,-highlyCorrelated])
+tmp = patDat[, c("class", important_var)]
+plotDf <- reshape2::melt(tmp, id.vars = 'class')
+
+png(filename = "~/clinvar/select_path_predict_dist.png", width = 9, height = 7, units = "in", res = 300)
+ggplot(plotDf, aes(x=variable, y=value, fill=class)) + 
+  geom_boxplot(outlier.colour=NA) +
+  scale_fill_manual(values = c("#999999", "#E69F00")) +
+  facet_wrap(~variable, scale="free")
+dev.off()
+```
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/select_path_predict_dist.png?token=AQUBCE6QJUTZ5HJAPA3TZ5DBCM6G4" width="500" height="500">
+
+
 #### Conservation scores
+The dbNSFP v4, provides data on 9 diffrent conservation score algorithms. The same approach to what I undertook for pathogenecity score prediction was applied here as well. 
