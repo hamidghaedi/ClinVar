@@ -709,3 +709,60 @@ dev.off()
 
 #### Conservation scores
 The dbNSFP v4, provides data on 9 diffrent conservation score algorithms. The same approach to what I undertook for pathogenecity score prediction was applied here as well. 
+
+```R
+cons = subClin[, c(c("class", consScore))]
+
+# replacing - with NA
+cons[cons == "-"] <- NA
+
+
+# setting datatype as numeric
+cons[, -1] = sapply(cons[, -1], as.numeric)
+
+# visualization
+plotDf <- reshape2::melt(cons, id.vars = 'class')
+
+png(filename = "~/clinvar/cons_dist.png", width = 15, height = 10, units = "in", res = 300)
+ggplot(plotDf, aes(x=variable, y=value, fill=class)) + 
+  geom_boxplot(outlier.colour=NA) +
+  scale_fill_manual(values = c("#999999", "#E69F00")) +
+  facet_wrap(~variable, scale="free")
+dev.off()
+````
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/cons_dist.png?token=AQUBCE36BS557YUTFLOJFBLBCRWAC" width="500" height="500">
+
+```R
+#correlation calculation
+M <-cor(cons[, -1], use = "complete.obs")
+
+png(filename = "~/clinvar/cons_corrplot.png", width = 15, height = 15, units = "in", res = 300)
+corrplot(M, type="upper", order="hclust",
+         col=brewer.pal(n=8, name="RdYlBu"))
+dev.off()
+```
+
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/cons_corrplot.png?token=AQUBCE4TWUPRJWCNF4JGQPTBCRWCY" width="500" height="500">
+
+
+```R
+# filtering based on correlation matrix
+highlyCorrelated <- caret::findCorrelation(M, cutoff=(0.7),verbose = FALSE)
+important_var=colnames(patDat[,-highlyCorrelated])
+
+tmp = cons[, c("class", important_var)]
+
+plotDf <- reshape2::melt(tmp, id.vars = 'class')
+
+png(filename = "~/clinvar/select_cons.png", width = 9, height = 7, units = "in", res = 300)
+ggplot(plotDf, aes(x=variable, y=value, fill=class)) + 
+  geom_boxplot(outlier.colour=NA) +
+  scale_fill_manual(values = c("#999999", "#E69F00")) +
+  facet_wrap(~variable, scale="free")
+dev.off()
+```
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/select_cons.png?token=AQUBCE3CWKSWHFY6CS2IQBLBCRWHC" width="500" height="500">
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+## Selected features
+
