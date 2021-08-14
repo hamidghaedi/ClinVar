@@ -764,5 +764,67 @@ dev.off()
 <img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/select_cons.png?token=AQUBCE3CWKSWHFY6CS2IQBLBCRWHC" width="500" height="500">
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------
+## Submission related criteria 
+
+ClinVAr FTP provides sevral files which can be used to identify metadata related to each submission. To have a recap on type of submission in ClinVar, each record in ClinVar is assigned a review status, including:
+
+- SCVs, or submitted records
+- RCVs, or aggregate variant-disease records
+- VCVs, or aggregate variant records (equivalent to the Variation ID)
+
+So each submission receives a SCV number and several SCV will aggregate to form a RCVs. Here I will exctract data on , number of submission, first submitter name, date for first submission and data collection method for each variant ID. 
+
+
+```R
+# submission/submitter info
+
+subClin <- readRDS("~/clinvar/subClin.rds")
+subClin <- data.frame(subClin)
+subClin$class = ifelse(subClin$class == 0, "noConflict", "conflict")
+subClin$ID = as.factor(subClin$ID)
+
+# there are different files for submission/submitter information (data downloaded from ClinVar FTP on 2021-08-12). I will use subInfo1 files, other files may worth an insepction to see what type of other data is available. 
+
+subInfo1 <- data.table::fread("~/clinvar/submission_summary.txt")
+subInfo2 <- data.table::fread("~/clinvar/summary_of_conflicting_interpretations.txt")
+subInfo3 <- data.table::fread("~/clinvar/variant_summary.txt")
+
+
+
+# distribution of submitter for variants
+submitterCount = data.frame(table(subInfo1$`#VariationID`))
+colnames(submitterCount) = c("ID", "Subcount")
+#overlap with Subclin
+table(subClin$ID %in% submitterCount$ID)
+
+# joining two datasets
+subCount = dplyr::left_join(submitterCount[which(submitterCount$ID %in% subClin$ID),], subClin[, c(3,30)])
+
+
+# mean of submission count between two groups
+t.test(Subcount ~ class, data = subCount, alternative = "two.sided", var.equal = FALSE)
+
+# Welch Two Sample t-test
+# 
+# data:  Subcount by class
+# t = 47.8, df = 70431, p-value < 2.2e-16
+# alternative hypothesis: true difference in means is not equal to 0
+# 95 percent confidence interval:
+#   0.6216439 0.6748036
+#  sample estimates: 
+#   mean in group conflict      mean in group noConflict 
+#   3.894831                    3.246608 
+
+
+# visualization
+png(filename = "~/clinvar/submitter_count.png", width = 9, height = 7, units = "in", res = 300)
+ggplot(subCount, aes(x=class, y=log10(Subcount), fill=class)) + 
+  geom_boxplot() +
+  scale_fill_manual(values = c("#999999", "#E69F00"))
+dev.off()
+```
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/submitter_count.png?token=AQUBCE6O5PYW272YGHJTFJTBC7S6Y" width="250" height="250">
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
 ## Selected features
 
