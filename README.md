@@ -823,7 +823,7 @@ ggplot(subCount, aes(x=class, y=log10(Subcount), fill=class)) +
   scale_fill_manual(values = c("#999999", "#E69F00"))
 dev.off()
 ```
-<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/submitter_count.png?token=AQUBCE6O5PYW272YGHJTFJTBC7S6Y" width="250" height="250">
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/submitter_count.png?token=AQUBCE6O5PYW272YGHJTFJTBC7S6Y" width="450" height="450">
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------
 ## Selected features
