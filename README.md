@@ -775,6 +775,8 @@ ClinVAr FTP provides sevral files which can be used to identify metadata related
 So each submission receives a SCV number and several SCV will aggregate to form a RCVs. Here I will exctract data on , number of submission, first submitter name, date for first submission and data collection method for each variant ID. 
 
 
+### Submitter and date of submission
+
 ```R
 # submission/submitter info
 
@@ -825,6 +827,205 @@ dev.off()
 ```
 <img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/submitter_count.png?token=AQUBCE6O5PYW272YGHJTFJTBC7S6Y" width="450" height="450">
 
+```R
+# making a df for each variant ID , first submitter, date and count of submission and other variables
+
+# filtering based on variant ids
+
+subSum = subInfo1[subInfo1$`#VariationID` %in% subClin$ID,]
+
+ids = unique(subSum$`#VariationID`)
+varID = c()
+submitterNo = c()
+firstSumitter = c()
+firstSumitterDate = c()
+CollectionMethod = c()
+
+for (i in 1:length(ids)){
+  df = subSum[subSum$`#VariationID` == ids[i], ]
+  varID[i] = ids[i]
+  submitterNo [i] = dim(df)[1]
+  df$DateLastEvaluated = sub(",", "", df$DateLastEvaluated)
+  df$DateLastEvaluated = as.Date(df$DateLastEvaluated,format = "%B %d %Y")
+  df = df[order(df$DateLastEvaluated),]
+  firstSumitterDate[i] = as.character(df$DateLastEvaluated[1])
+  firstSumitter[i] = df$Submitter[1]
+  CollectionMethod[i] = df$CollectionMethod[1]
+}
+
+submitterDf = data.frame(ID = as.factor(varID), firstSumitter = firstSumitter,firstSumitterDate = firstSumitterDate,
+                         submitterNo = submitterNo, CollectionMethod = CollectionMethod)
+
+# 
+tmp = data.frame(unclass(table(submitterDf$firstSumitter)))
+tmp$submitter = rownames(tmp)
+topSubmitter = tmp$submitter[tmp$unclass.table.submitterDf.firstSumitter.. >= 1000]
+
+# A total of 507 centers contributed to submission of 187643  variants.
+# top centers with highest number of submission
+
+submitterDf = dplyr::left_join(submitterDf, subClin[, c(3,30)], by = "ID")
+
+library(dplyr)
+
+tmp = submitterDf %>%
+  group_by(firstSumitter, class) %>%
+  summarise(count = n())
+
+tmp = tmp[tmp$firstSumitter %in% topSubmitter, ]
+tmp = data.frame(tmp)
+
+# making long names, shorter
+tmp$firstSumitter[tmp$firstSumitter == "ARUP Laboratories, Molecular Genetics and Genomics,ARUP Laboratories"] <- "ARUP Laboratories"
+tmp$firstSumitter[tmp$firstSumitter == "Biesecker Lab/Clinical Genomics Section,National Institutes of Health"] <- "Biesecker Lab_NIH"
+tmp$firstSumitter[tmp$firstSumitter == "CeGaT Praxis fuer Humangenetik Tuebingen"] <- "CeGaT Tuebingen"
+tmp$firstSumitter[tmp$firstSumitter == "Center for Pediatric Genomic Medicine,Children's Mercy Hospital and Clinics"] <- "Children's Mercy Hospital"
+tmp$firstSumitter[tmp$firstSumitter == "EGL Genetic Diagnostics, Eurofins Clinical Diagnostics"] <- "Eurofins Clinical Diagnostics"
+tmp$firstSumitter[tmp$firstSumitter == "Genetic Services Laboratory, University of Chicago"] <- "University of Chicago"
+tmp$firstSumitter[tmp$firstSumitter == "Illumina Clinical Services Laboratory,Illumina"] <- "Illumina Clinical Laboratory"
+tmp$firstSumitter[tmp$firstSumitter == "Laboratory for Molecular Medicine, Partners HealthCare Personalized Medicine"] <- "Partners HealthCare Person. Med."
+tmp$firstSumitter[tmp$firstSumitter == "Quest Diagnostics Nichols Institute San Juan Capistrano"] <- "Quest Diagnostics"
+tmp$firstSumitter[tmp$firstSumitter == "Women's Health and Genetics/Laboratory Corporation of America, LabCorp"] <- "LabCorp"
+
+# convert counts into percent values
+num = seq(1,37, 2)
+relFreq = as.numeric()
+
+for(i in num){
+  relFreq[i] = round(100 * (tmp$count[i]/(tmp$count[i] + tmp$count[i+1])),2)
+  relFreq[i+1] = round(100 * (tmp$count[i+1]/(tmp$count[i] + tmp$count[i+1])),2)
+}
+
+tmp$relfreq = relFreq
+
+# make a group value as negative
+tmp$relfreq[tmp$class == "conflict"] = -tmp$relfreq[tmp$class == "conflict"]
+
+
+# X Axis Breaks and Labels 
+brks <- seq(-100, 100, 10)
+brks
+lbls <- c('100','90','80','70','60','50','40','30','20','10','0','10', '20','30','40','50','60','70','80','90','100')
+
+png(filename = "~/clinvar/submitter_class.png", width = 12, height = 9, units = "in", res = 300)
+
+ggplot(tmp, aes(x = firstSumitter, y = relfreq, fill = class)) +   # Fill column
+  geom_bar(stat = "identity", width = .6) +   # draw the bars
+  scale_y_continuous(breaks = brks, labels = lbls) + # Labels
+  coord_flip() +  # Flip axes
+  labs(title="Relative frequency for conflict/no-conflict submission") +
+  xlab('Genetic center') +
+  ylab('%Submission') +
+  theme_tufte() +  # Tufte theme from ggfortify
+  theme(plot.title = element_text(hjust = .5),
+        axis.ticks = element_blank(),
+        text=element_text(size=15)) +   # Centre plot title
+  scale_fill_manual(values=c('#999999','#E69F00')) +  # Color palette
+  guides(fill=guide_legend("Class")) +
+  geom_hline(yintercept = 50, colour="blue", linetype="dashed") +
+  geom_hline(yintercept = 60, colour="blue", linetype="dashed") +
+  geom_hline(yintercept = 70, colour="blue", linetype="dashed") +
+  geom_hline(yintercept = 80, colour="blue", linetype="dashed") +
+  geom_hline(yintercept = 90, colour="blue", linetype="dashed") +
+  geom_hline(yintercept = -10, colour="blue", linetype="dashed") +
+  geom_hline(yintercept = -20, colour="blue", linetype="dashed") +
+  geom_hline(yintercept = -30, colour="blue", linetype="dashed") +
+  geom_hline(yintercept = -40, colour="blue", linetype="dashed")
+
+dev.off()
+```
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/submitter_class.png?token=AQUBCE4BISZKCEVQFDRJCEDBDGWOO" width="700" height="500">
+
+```R
+#make another df for visualization by mosaic plot
+
+tmp = submitterDf[submitterDf$firstSumitter %in% topSubmitter, ]
+
+# creating df
+submitterList = vector(mode = "list", length = length(topSubmitter))
+
+for (i in 1:length(topSubmitter)){
+  df = tmp[tmp$firstSumitter == topSubmitter[i],]
+  tmpDf = unclass(table(df$firstSumitter, df$class))
+  submitterList[[i]] <- tmpDf
+}
+
+tabularDF= data.frame(do.call(rbind, submitterList))
+
+
+# making long names, shorter
+rownames(tabularDF)[rownames(tabularDF) == "ARUP Laboratories, Molecular Genetics and Genomics,ARUP Laboratories"] <- "ARUP Laboratories"
+rownames(tabularDF)[rownames(tabularDF) == "Biesecker Lab/Clinical Genomics Section,National Institutes of Health"] <- "Biesecker Lab_NIH"
+rownames(tabularDF)[rownames(tabularDF) == "CeGaT Praxis fuer Humangenetik Tuebingen"] <- "CeGaT Tuebingen"
+rownames(tabularDF)[rownames(tabularDF) == "Center for Pediatric Genomic Medicine,Children's Mercy Hospital and Clinics"] <- "Children's Mercy Hospital"
+rownames(tabularDF)[rownames(tabularDF) == "EGL Genetic Diagnostics, Eurofins Clinical Diagnostics"] <- "Eurofins Clinical Diagnostics"
+rownames(tabularDF)[rownames(tabularDF) == "Genetic Services Laboratory, University of Chicago"] <- "University of Chicago"
+rownames(tabularDF)[rownames(tabularDF) == "Illumina Clinical Services Laboratory,Illumina"] <- "Illumina Clinical Laboratory"
+rownames(tabularDF)[rownames(tabularDF) == "Laboratory for Molecular Medicine, Partners HealthCare Personalized Medicine"] <- "Partners HealthCare Person. Med."
+rownames(tabularDF)[rownames(tabularDF) == "Quest Diagnostics Nichols Institute San Juan Capistrano"] <- "Quest Diagnostics"
+rownames(tabularDF)[rownames(tabularDF) == "Women's Health and Genetics/Laboratory Corporation of America, LabCorp"] <- "LabCorp"
+
+
+# convert the data as a table
+dt <- as.table(as.matrix(tabularDF))
+#
+library("graphics")
+png(filename = "~/clinvar/submitter_class_mosaic.png", width = 12, height = 10, units = "in", res = 300)
+mosaicplot(dt, shade = TRUE, las=2,
+           main = "")
+dev.off()
+```
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/submitter_class_mosaic.png?token=AQUBCE45STBDBJSF5GA2XM3BDGWRC" width="700" height="500">
+
+
 -----------------------------------------------------------------------------------------------------------------------------------------------------------
-## Selected features
+### Collection method
+
+For the first submission of each record I retrived data on method of collection. Collection method help to understand the setting in which the variant interpretation is made.
+So by looking at the collection method, we can see whether ClinVar data is collected as part of clinical testing with very standardized classification
+, as part of research where the classification may be standardized or more experimental or from the literature which may be out of date. The following table adapted from [ClinVar documentation](https://www.ncbi.nlm.nih.gov/clinvar/docs/spreadsheet/#collection), provides full description of diffrent method of colection: 
+
+
+|     Collection method      | Use  |
+| :-------------- |:--------------|
+|clinical testing	 | For variants that were interpreted as part of clinical genetic testing, or as part of a large volume research study in which results compliant with CLIA, ISO, GLP, or an equivalent accreditation body are routinely returned to research subjects. Interpretation may be guided from the literature, but the number of individuals tested are reported only from the direct testing.|
+|research |	For variants that were interpreted as part of a research project but results are not routinely returned to research subjects and do not meet the requirements for clinical testing above. This is a general term to use when other more specific methods to not apply.|
+|case-control|	For variants gathered in a research setting but results are not routinely returned to research subjects and do not meet the requirements for clinical testing above. This term is for research projects specifically to compare alleles observed in cases and controls (without data about segregation).|
+|in vitro|For variants that were interpreted as part of an in vivo research project, such as experiments performed in cell culture, but results are not routinely returned to research subjects and do not meet the requirements for clinical testing above. This value is only used on the full spreadsheet template, on the FunctionalEvidence tab for experimental evidence.|
+|in vivo|	For variants that were interpreted as part of an in vitro research project, such as a mouse model, but results are not routinely returned to research subjects and do not meet the requirements for clinical testing above.This value is only used on the full spreadsheet template, on the FunctionalEvidence tab for experimental evidence.|
+|reference population|For variants gathered in a research setting but results are not routinely returned to research subjects and do not meet the requirements for clinical testing above. This term is used for baseline studies of a population group of apparently unaffected individuals to assess allele frequencies.|
+|provider interpretation|For variants that were interpreted by a clinical provider.|
+|phenotyping only|For variants that are submitted to ClinVar to provide individual observations with detailed phenotype data, such as submissions from clinicians or patient registries, without an interpretation from the submitter. The interpretation from the testing laboratory may be provided in a separate field.|
+|literature only|For variants extracted from published literature with interpretation as reported in the citation. No additional curation has been performed by the submitter; the interpretation is from the publication(s) only. This method is used by third parties, not the authors of the paper. To report results from your own paper, use one of the other collection methods, such as "research".|
+|curation|For variants that were not directly observed by the submitter, but were interpreted by curation of multiple sources, including clinical testing laboratory reports, publications, private case data, and public databases.|
+
+
+For conflict/noConflict variants, collection method data is summerized and visualized.
+
+```R
+View(table(submitterDf$CollectionMethod))
+```
+|collectionMethod|Count|
+| :-------------- |:--------------|
+|clinical testing|175171|
+|literature only|6162|
+|research|3587|
+|reference population|1061|
+|curation|997|
+|clinical testing;curation|301|
+|case-control|100|
+|provider interpretation|100|
+|curation;literature only|87|
+|clinical testing;in vitro|19|
+|clinical testing;provider interpretation|19|
+|in vitro|18|
+|clinical testing;research|9|
+|in vitro;research|5|
+|literature only;research|3|
+|clinical testing;phenotyping only|1|
+|in vivo;research|1|
+|phenotyping only|1|
+|reference population;research|1|
+
+```R
 
