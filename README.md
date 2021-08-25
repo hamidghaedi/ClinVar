@@ -1028,4 +1028,27 @@ View(table(submitterDf$CollectionMethod))
 |reference population;research|1|
 
 ```R
+```
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+## Selected features based on expalanotry data analysis
+
+- Allele frequency-related features:
+- Variant consequence feature:
+- Gene-related features:
+
+     -A
+     -B
+- Pathogenicity prediction scores:
+
+     - A
+     - B
+     - C
+- Conservation scores:
+
+     - A
+     - b
+     - c
+- Submission-related features:
+    - First submitter
+    - Collection method
 
