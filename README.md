@@ -435,7 +435,7 @@ dev.off
 ```
 
 Variant count in each class:
-<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/geneType.png?token=AQUBCEZ22SO52OPYLBQKHFDBFULI6" width="1800" height="500">
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/geneType.png" width="1800" height="500">
 
 Percent of different classes for top 50 genes
 <img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/geneType_percent.png?token=AQUBCEYSSO6CS42KJTBEYQTBFUKKK" width="1800" height="500">
