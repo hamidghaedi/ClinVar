@@ -24,7 +24,7 @@ How many variants in each class:
 
 Review status pie chart                 | 
 :----------------------------------------------------------------------------------------------------------------:|
-<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/class_dist.PNG?token=AQUBCE7EVI2C2T4CU23RZRTBBLVKS" width="800" height="400"> |
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/class_dist.PNG" width="800" height="400"> |
 
 Receiving more submissions from the community, variants in the class "criteria provided, single submitter" will turn into one of the "criteria provided, multiple submitter, no conflicts" or "criteria provided, conflicting interpretations" classes. To find out which features  of variants may contibute to this conversion, I am doing this project.
 
@@ -351,7 +351,95 @@ ggplot(afSubPopMelted, aes(x = variable, y = log10(value))) +
   ```
 <img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/sub_pop_allele-freq.PNG?token=AQUBCE5KFTPLRQTIWIFWGGLBBLWS4" width="800" height="400">
 
+
+
 #### Analysis: variant consequnce annotation
+```R
+# Gene Type
+  
+tmp = data.frame(unclass(table(subClin$SYMBOL, subClin$class)))
+tmp$gene = rownames(tmp)
+rownames(tmp) = NULL
+tmp = tmp[-(tmp$gene == "-"),]
+
+# visualization
+library(ggplot2)
+library(dplyr)
+
+plotDf = reshape2::melt(tmp, id.var = "gene")
+# top 50 genes
+tmp$total = tmp$conflict+tmp$noConflict
+
+# top 50 most sumitted genes
+tmp = tmp %>% arrange(desc(total))
+top50 = tmp$gene[1:50]
+
+# reducing plotDf
+plotDf = plotDf[plotDf$gene %in% top50,]
+
+# Arrange/sort and compute cumulative summs
+plotDf <- plotDf %>%
+  group_by(gene) %>%
+  arrange(desc(value)) %>%
+  mutate(lab_ypos = cumsum(value) - 0.5 * value) 
+
+# Create stacked bar graphs with labels
+png(filename = "~/clinvar/geneType.png", width = 10, height = 7, units = "in", res = 300)
+ ggplot(data = plotDf, aes(x = reorder(gene, -value), y = value)) +
+  geom_col(aes(fill = variable), width = 0.9)+
+  scale_fill_manual(values = c("#999999", "#E69F00")) +
+  theme_bw() + 
+  theme(axis.text.x=element_text(angle=90)) +
+  xlab("Top 50 most submitted genes") + 
+  ylab("variant count in each class") +
+   theme(
+     axis.title.x = element_text(size = 12),
+     axis.text.x = element_text(size = 10),
+     axis.title.y = element_text(size = 12))
+dev.off()
+
+# plotting with percent values
+gene = tmp$gene
+conflict = round(100*tmp$conflict/(tmp$conflict+tmp$noConflict),0)
+noConflict = round(100*tmp$noConflict/(tmp$conflict+tmp$noConflict),0)
+tmp2 = data.frame(gene = gene, conflict = conflict, noConflict = noConflict)
+
+plotDf = reshape2::melt(tmp2, id.var = "gene")
+plotDf = plotDf[plotDf$gene %in% top50,]
+# like what mentioned above
+plotDf <- plotDf %>%
+  group_by(gene) %>%
+  arrange(desc(value)) %>%
+  mutate(lab_ypos = cumsum(value) - 0.5 * value) 
+
+# set order
+df = tmp2[tmp2$gene %in% top50,] %>% arrange(desc(conflict))
+positions <- df$gene
+
+# Create stacked bar graphs with labels
+png(filename = "~/clinvar/geneType_percent.png", width = 16, height = 8.135, units = "in", res = 300)
+  ggplot(data = plotDf, aes(x = gene, y = value)) +
+  geom_col(aes(fill = variable), width = 0.9)+
+  geom_text(aes(y = lab_ypos, label = value, group =variable), color = "white") +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=90)) +
+  scale_fill_manual(values = c(c("#999999", "#E69F00"))) +
+  scale_x_discrete(limits = positions) +
+  xlab("Top 50 most submitted genes") + 
+  ylab("% of variant count in each class") +
+  theme(
+    axis.title.x = element_text(size = 12),
+    axis.text.x = element_text(size = 10),
+    axis.title.y = element_text(size = 12))
+dev.off
+```
+
+Variant count in each class:
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/geneType.png?token=AQUBCEZ22SO52OPYLBQKHFDBFULI6" width="1800" height="500">
+
+Percent of different classes for top 50 genes
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/geneType_percent.png?token=AQUBCEYSSO6CS42KJTBEYQTBFUKKK" width="1800" height="500">
+
 ```R
 # consequences
 unique(subClin$Consequence)
@@ -1036,8 +1124,9 @@ View(table(submitterDf$CollectionMethod))
 - Variant consequence feature:
 - Gene-related features:
 
-     -A
-     -B
+     - A
+     - B
+     
 - Pathogenicity prediction scores:
 
      - A
@@ -1051,4 +1140,17 @@ View(table(submitterDf$CollectionMethod))
 - Submission-related features:
     - First submitter
     - Collection method
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+## Classification algorithms
+
+Standard logistic regression
+K-nearest neighbors algorithm
+Decision Tree
+Random Forest
+AdaBoost
+xgBoost
+Support vector machines
+Multi-layer Perceptron classifier(MLPC) neural network
+
 
