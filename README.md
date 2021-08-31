@@ -652,7 +652,7 @@ ggplot(data = plotDf, aes(x = impact, y = value)) +
     axis.title.y = element_text(size = 14))
 dev.off()
 ```
-<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/IMPACT_percent.png" width="500" height="600">
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/IMPACT_percent.png" width="1000" height="700">
 
 ```R
 # transcript length
