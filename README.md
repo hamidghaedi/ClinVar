@@ -522,25 +522,83 @@ unique(subClin$Consequence)
 # [76] "transcript_ablation" 
 
 tmp = data.frame(unclass(table(subClin$class, subClin$Consequence)))
-rownames(tmp) <- c("noConflict", "conflict")
+#rownames(tmp) <- c("noConflict", "conflict")
 tmp = data.frame(t(tmp))
+tmp$conseq = rownames(tmp)
+tmp$total = tmp$noConflict+tmp$conflict
+tmp = tmp %>% arrange(desc(total))
 
-tmp$conflict_precent = round(tmp$conflict/sum(tmp$conflict)*100,2)
-tmp$noConflict_precent = round(tmp$noConflict/sum(tmp$noConflict)*100,2)
 
-filtTmp = tmp[tmp$conflict_precent >= 1 | tmp$noConflict_precent >= 1, ]
-filtTmp = filtTmp[, c(-1,-2)]
-rownames(filtTmp)[1] <- "3_prime_UTR_variant"
+# selection this category with data larger than 1K:
+tmp = tmp[tmp$total > 1000,]
 
-chisq <- chisq.test(filtTmp)
-chisq
+# melting dataframe
+plotDf = reshape2::melt(tmp[-4], id.var = "conseq")
 
-library(corrplot)
-png(filename = "~/clinvar/conseq.png", width = 7, height = 10, units = "in", res = 300)
-corrplot::corrplot(chisq$residuals, is.cor = FALSE, cl.pos = 'n')
+# correcting names
+plotDf$conseq[plotDf$conseq == "X3_prime_UTR_variant"] <- "3_prime_UTR_variant"
+plotDf$conseq[plotDf$conseq == "X5_prime_UTR_variant"] <- "5_prime_UTR_variant"
+plotDf$value2 = log10(plotDf$value)
+
+# plotting
+png(filename = "~/clinvar/conseqBarplot.png", width = 16, height = 8.135, units = "in", res = 300)
+ggplot(data = plotDf, aes(x = reorder(conseq, -value), y = value)) +
+  geom_col(aes(fill = variable), width = 0.9)+
+  scale_fill_manual(values = c("#999999", "#E69F00")) +
+  theme_bw() + 
+  theme(axis.text.x=element_text(angle=90)) +
+  xlab("Consequence groups with >1K variants") + 
+  ylab("variant count in each class") +
+  theme(
+    axis.title.x = element_text(size = 12),
+    axis.text.x = element_text(size = 10),
+    axis.title.y = element_text(size = 12))
+dev.off()
+
+#
+# plotting with percent values
+tmp$conflict = tmp$conflict/tmp$total
+tmp$noConflict = tmp$noConflict/tmp$total
+
+# rounding and *100
+tmp$conflict = round(tmp$conflict * 100,0)
+tmp$noConflict = round(tmp$noConflict * 100,0)
+# renaming variables
+tmp$conseq[tmp$conseq == "X3_prime_UTR_variant"] <- "3_prime_UTR_variant"
+tmp$conseq[tmp$conseq == "X5_prime_UTR_variant"] <- "5_prime_UTR_variant"
+
+
+plotDf = reshape2::melt(tmp[-4], id.var = "conseq")
+
+# like what mentioned above
+plotDf <- plotDf %>%
+  group_by(conseq) %>%
+  arrange(desc(value)) %>%
+  mutate(lab_ypos = cumsum(value) - 0.5 * value) 
+
+# vis
+positions = tmp$conseq
+
+png(filename = "~/clinvar/Conseq_percent.png", width = 16, height = 8.135, units = "in", res = 300)
+ggplot(data = plotDf, aes(x = conseq, y = value)) +
+  geom_col(aes(fill = variable), width = 0.9)+
+  geom_text(aes(y = lab_ypos, label = value, group =variable), color = "white") +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=90)) +
+  scale_fill_manual(values = c(c("#999999", "#E69F00"))) +
+  scale_x_discrete(limits = positions) +
+  xlab("Consequence groups with >1K variants") + 
+  ylab("% of variant count in each class") +
+  theme(
+    axis.title.x = element_text(size = 14),
+    axis.text.x = element_text(size = 12),
+    axis.title.y = element_text(size = 14))
 dev.off()
 ```
-<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/conseq.png?token=AQUBCE64NO4HCEAQ24OEB5DBBLXFI" width="500" height="800">
+Variant count in each class:
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/conseqBarplot.png" width="1800" height="500">
+Percent of variant in each class:
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/Conseq_percent.png" width="1800" height="500">
 
 ```R
 # IMPACT
@@ -549,19 +607,52 @@ table(subClin$class, subClin$IMPACT)
 
 tmp = data.frame(unclass(table(subClin$class, subClin$IMPACT)))
 tmp = data.frame(t(tmp))
+tmp$impact = rownames(tmp)
+tmp$total = tmp$noConflict+tmp$conflict
+tmp = tmp %>% arrange(desc(total))
 
-tmp$conflict_precent = round(tmp$conflict/sum(tmp$conflict)*100,2)
-tmp$noConflict_precent = round(tmp$noConflict/sum(tmp$noConflict)*100,2)
+# adding total number to group name
+tmp$impact = paste0(tmp$impact, " [", tmp$total, "]")
+
+# plotting with percent values
+tmp$conflict = tmp$conflict/tmp$total
+tmp$noConflict = tmp$noConflict/tmp$total
+
+# rounding and *100
+tmp$conflict = round(tmp$conflict * 100,0)
+tmp$noConflict = round(tmp$noConflict * 100,0)
 
 
-chisq <- chisq.test(tmp[, c(1:2)])
-chisq
 
-png(filename = "~/clinvar/impact.png", width = 7, height = 10, units = "in", res = 300)
-corrplot::corrplot(chisq$residuals, is.cor = FALSE, cl.pos = 'n')
+plotDf = reshape2::melt(tmp[-4], id.var = "impact")
+
+# like what mentioned above
+plotDf <- plotDf %>%
+  group_by(impact) %>%
+  arrange(desc(value)) %>%
+  mutate(lab_ypos = cumsum(value) - 0.5 * value) 
+
+#vis
+
+positions = c("MODIFIER [24672]", "LOW [58738]", "MODERATE [88013]", "HIGH [16070]")
+
+png(filename = "~/clinvar/IMPACT_percent.png", width = 16, height = 8.135, units = "in", res = 300)
+ggplot(data = plotDf, aes(x = impact, y = value)) +
+  geom_col(aes(fill = variable), width = 0.6)+
+  geom_text(aes(y = lab_ypos, label = value, group =variable), color = "white") +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45, vjust =0.9, hjust = 1)) +
+  scale_fill_manual(values = c(c("#999999", "#E69F00"))) +
+  scale_x_discrete(limits = positions) +
+  xlab("VEP impact group [number of mutations]") + 
+  ylab("% of variant count in each class") +
+  theme(
+    axis.title.x = element_text(size = 14),
+    axis.text.x = element_text(size = 12),
+    axis.title.y = element_text(size = 14))
 dev.off()
 ```
-<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/impact.png?token=AQUBCE4KBL6DJBTX4SYADVTBBLXNE" width="500" height="600">
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/IMPACT_percent.png" width="500" height="600">
 
 ```R
 # transcript length
