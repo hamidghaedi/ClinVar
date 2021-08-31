@@ -1022,7 +1022,7 @@ ggplot(tmp, aes(x = firstSumitter, y = relfreq, fill = class)) +   # Fill column
 
 dev.off()
 ```
-<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/submitter_class.png?token=AQUBCE4BISZKCEVQFDRJCEDBDGWOO" width="700" height="500">
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/submitter_class_3.png" width="700" height="500">
 
 ```R
 #make another df for visualization by mosaic plot
