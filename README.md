@@ -600,6 +600,16 @@ Variant count in each class:
 Percent of variant in each class:
 <img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/Conseq_percent.png" width="1800" height="500">
 
+VEP tool provide predictions on a varaint impact. Variant impact is a subjective classification of the severity of the variant consequence, based on agreement between VEP SNPEff.
+
+**Modifier impact** : Usually non-coding variants or variants affecting non-coding genes, where predictions are difficult or there is no evidence of impact.
+
+**Low impact** : A variant that is assumed to be mostly harmless or unlikely to change protein behaviour.
+
+**Moderate impact**  A non-disruptive variant that might change protein effectiveness.
+
+**High impact**  The variant is belived to have high (disruptive) impact in the protein, probably causing protein truncation, loss of function or triggering nonsense mediated decay.
+
 ```R
 # IMPACT
 
