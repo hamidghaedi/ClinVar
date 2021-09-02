@@ -77,7 +77,25 @@ table(subClin$class)
 # 138617  49026 
 ```
 
-#### Analysis: allele frequecny features
+## Analysis: 
+
+Considering different aspects of variant annotation fields, different type of analysis can be imagined:
+- Allele frequency analysis
+- Gene type analysis
+- Allele type analysis
+- Variant molecular type analysis
+- Variant consequences analysis
+- Variant impact on protein analysis
+- Affected transcript length analysis
+- variant location in exon analysis
+- Pathogenicity scores analysis
+- Conservation score analysis
+- First submitter analysis
+- Collection method analysis
+
+
+
+### Allele frequency analysis
 ```R
 
 # allele frequency data in dataset
