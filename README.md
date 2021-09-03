@@ -371,7 +371,7 @@ ggplot(afSubPopMelted, aes(x = variable, y = log10(value))) +
 
 
 
-#### Analysis: variant consequnce annotation
+#### Gene type analysis
 ```R
 # Gene Type
   
@@ -458,10 +458,153 @@ Variant count in each class:
 Percent of different classes for top 50 genes
 <img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/geneType_percent%20_2.png" width="1800" height="500">
 
+#### Allele type analysis
+```r
+tmp = subClin[, c(30,4,5)]
+tmp$allele = paste0(tmp$REF, ">", tmp$ALT)
+
+tmp$REFlenCat = ifelse(nchar(tmp$REF) ==1, "1", ">1")
+tmp$ALTlenCat = ifelse(nchar(tmp$ALT) ==1, "1", ">1")
+# coding REF multi_nts and ALT multi_nts
+tmp$allele = ifelse(tmp$REFlenCat != 1, "REFmulti_nts", 
+                    ifelse(tmp$ALTlenCat != 1,"ALTmulti_nts", tmp$allele))
+
+# visualization REF type
+tmp = data.frame(unclass(table(tmp$allele, tmp$class)))
+tmp$allele = rownames(tmp)
+tmp$total = tmp$noConflict+tmp$conflict
+tmp = tmp %>% arrange(desc(allele))
+
+# adding total number to group name
+tmp$allele = paste0(tmp$allele, " [", tmp$total, "]")
+
+# plotting with percent values
+tmp$conflict = tmp$conflict/tmp$total
+tmp$noConflict = tmp$noConflict/tmp$total
+
+# rounding and *100
+tmp$conflict = round(tmp$conflict * 100,0)
+tmp$noConflict = round(tmp$noConflict * 100,0)
+
+
+
+plotDf = reshape2::melt(tmp[-4], id.var = "allele")
+
+# like what mentioned above
+plotDf <- plotDf %>%
+  group_by(allele) %>%
+  arrange(desc(value)) %>%
+  mutate(lab_ypos = cumsum(value) - 0.5 * value) 
+
+#vis
+positions = c("T>G [4222]","T>C [17661]","T>A [3287]","G>T [7138]","G>C [7869]","G>A [46446]","C>T [46880]","C>G [8302]","C>A [7134]","A>T [3478]","A>G [18674]","A>C [4249]","REFmulti_nts [8556]","ALTmulti_nts [3597]")
+
+png(filename = "~/clinvar/alleleType_percent.png", width = 16, height = 8.135, units = "in", res = 300)
+ggplot(data = plotDf, aes(x = allele, y = value)) +
+  geom_col(aes(fill = variable), width = 0.6)+
+  geom_text(aes(y = lab_ypos, label = value, group =variable), color = "white") +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45, vjust =0.9, hjust = 1)) +
+  scale_fill_manual(values = c("#999999", "#E69F00")) +
+  scale_x_discrete(limits = positions) +
+  xlab("Allele change [total number of events]") + 
+  ylab("% of variant count in each class") +
+  theme(
+    axis.title.x = element_text(size = 14),
+    axis.text.x = element_text(size = 12),
+    axis.title.y = element_text(size = 14))
+dev.off()
+
+# create mosaic plot to see association
+tmp = subClin[, c(30,4,5)]
+tmp$allele = paste0(tmp$REF, ">", tmp$ALT)
+
+tmp$REFlenCat = ifelse(nchar(tmp$REF) ==1, "1", ">1")
+tmp$ALTlenCat = ifelse(nchar(tmp$ALT) ==1, "1", ">1")
+# coding REF multi_nts and ALT multi_nts
+tmp$allele = ifelse(tmp$REFlenCat != 1, "REFmulti_nts", 
+                    ifelse(tmp$ALTlenCat != 1,"ALTmulti_nts", tmp$allele))
+
+# creating data table
+dt = as.table(as.matrix(table(tmp$allele, tmp$class)))
+
+png(filename = "~/clinvar/mosaic_allele_change.png", width = 16, height = 8.135, units = "in", res = 300)
+mosaicplot(dt, shade = T, las=2,
+           main = "Allele change", cex.axis = 1.5)
+dev.off()
+```
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/alleleType_percent.png" width="1800" height="500">
+
+However, the above plot does not indicate to a signiicant association, the following mosaic plot indicates significant association between allele change and conflict class. In this plot blue color indicates that the observed value is higher than the expected value if the data were random and red color specifies that the observed value is lower than the expected value if the data were random.
+
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/mosaic_allele_change.png" width="1800" height="500">
+
+#### Variant molecular type analysis
+```R
+
+names(subClin)
+
+
+table(subClin$class, subClin$CLNVC)
+
+#                  Deletion Duplication  Indel    Insertion  Inversion  Microsatellite              SNP        Variation
+# noConfilict     5176        2362       541       229        50           1873                    128380         6
+# conflict        758         431        108        51        13            565                     47100         0
+
+
+tmp = data.frame(unclass(table(subClin$class, subClin$CLNVC)))
+tmp = data.frame(t(tmp))
+tmp$type = rownames(tmp)
+tmp$total = tmp$noConflict+tmp$conflict
+tmp = tmp %>% arrange(desc(total))
+tmp$type[1] = "SNV"
+
+# adding total number to group name
+tmp$type = paste0(tmp$type, " [", tmp$total, "]")
+
+# plotting with percent values
+tmp$conflict = tmp$conflict/tmp$total
+tmp$noConflict = tmp$noConflict/tmp$total
+
+# rounding and *100
+tmp$conflict = round(tmp$conflict * 100,0)
+tmp$noConflict = round(tmp$noConflict * 100,0)
+
+
+
+plotDf = reshape2::melt(tmp[-4], id.var = "type")
+
+# like what mentioned above
+plotDf <- plotDf %>%
+  group_by(type) %>%
+  arrange(desc(value)) %>%
+  mutate(lab_ypos = cumsum(value) - 0.5 * value) 
+
+#vis
+positions = c("SNV [175340]","Deletion [5931]","Duplication [2793]","Microsatellite [2438]","Indel [648]","Insertion [280]","Inversion [63]")
+
+png(filename = "~/clinvar/Type_percent.png", width = 16, height = 8.135, units = "in", res = 300)
+ggplot(data = plotDf, aes(x = type, y = value)) +
+  geom_col(aes(fill = variable), width = 0.6)+
+  geom_text(aes(y = lab_ypos, label = value, group =variable), color = "white") +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45, vjust =0.9, hjust = 1)) +
+  scale_fill_manual(values = c(c("#999999", "#E69F00"))) +
+  scale_x_discrete(limits = positions) +
+  xlab("Molecular type of variant [number of mutations]") + 
+  ylab("% of variant count in each class") +
+  theme(
+    axis.title.x = element_text(size = 14),
+    axis.text.x = element_text(size = 12),
+    axis.title.y = element_text(size = 14))
+dev.off()
+```
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/Type_percent.png" width="1800" height="500">
+
+#### Variant consequences analysis
 ```R
 # consequences
 unique(subClin$Consequence)
-
 # [1] "missense_variant"                                                                                       
 # [2] "synonymous_variant"                                                                                     
 # [3] "intron_variant"                                                                                         
@@ -613,7 +756,14 @@ ggplot(data = plotDf, aes(x = conseq, y = value)) +
     axis.title.y = element_text(size = 14))
 dev.off()
 ```
-Variant count in each class:
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/conseqBarplot.png" width="1800" height="500">
+
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/Conseq_percent.png" width="1800" height="500">
+
+#### Variant consequences analysis
+
+
+#### Variant count in each class:
 <img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/conseqBarplot.png" width="1800" height="500">
 Percent of variant in each class:
 <img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/Conseq_percent.png" width="1800" height="500">
