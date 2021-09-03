@@ -760,13 +760,7 @@ dev.off()
 
 <img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/Conseq_percent.png" width="1800" height="500">
 
-#### Variant consequences analysis
-
-
-#### Variant count in each class:
-<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/conseqBarplot.png" width="1800" height="500">
-Percent of variant in each class:
-<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/Conseq_percent.png" width="1800" height="500">
+#### Variant impact on protein analysis
 
 VEP tool provide predictions on a varaint impact. Variant impact is a subjective classification of the severity of the variant consequence, based on agreement between VEP SNPEff.
 
@@ -779,8 +773,6 @@ VEP tool provide predictions on a varaint impact. Variant impact is a subjective
 **High impact**  The variant is belived to have high (disruptive) impact in the protein, probably causing protein truncation, loss of function or triggering nonsense mediated decay.
 
 ```R
-# IMPACT
-
 table(subClin$class, subClin$IMPACT)
 
 tmp = data.frame(unclass(table(subClin$class, subClin$IMPACT)))
@@ -829,12 +821,13 @@ ggplot(data = plotDf, aes(x = impact, y = value)) +
     axis.text.x = element_text(size = 12),
     axis.title.y = element_text(size = 14))
 dev.off()
+
 ```
-<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/IMPACT_percent.png" width="1000" height="700">
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/IMPACT_percent.png" width="1800" height="500">
+
+#### Affected transcript length analysis
 
 ```R
-# transcript length
-
 subClin <- readRDS("~/clinvar/subClin.rds")
 subClin <- data.frame(subClin)
 subClin$class = ifelse(subClin$class == 0, "noConflict", "conflict")
@@ -860,16 +853,6 @@ tmp = dplyr::left_join(tmp, transMart)
 # tmp = tmp[,c(1,3,4,7)]
 tmp = tmp[!is.na(tmp$transcript_length),]
 
-## Calculate bin breaks for numeric variables with respect to their relationships with the outcome variable class
-bins =scorecard::woebin(tmp[, c('transcript_length', 'class')], y = 'class', positive = 'conflict')
-
-# visualization
-scorecard::woebin_plot(bins$transcript_length)$transcript_length
-
-tmp = tmp[tmp$transcript_length < 40000, ]
-
-t.test(transcript_length ~ class, data = tmp, alternative = "two.sided", var.equal = FALSE)
-
 
 library(ggplot2)
 png(filename = "~/clinvar/transcript_length.png", width = 7, height = 10, units = "in", res = 300)
@@ -878,88 +861,67 @@ ggplot(tmp, aes(x = as.factor(class), y = log10(transcript_length))) +
   scale_fill_manual(values = c("#999999", "#E69F00")) + 
   theme_bw()
 dev.off()
-```
-<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/transcript_length.png?token=AQUBCE4I2PWFUIDDFO6UIEDBBLX4G" width="400" height="500">
+````
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/transcript_length.png" width="1800" height="500">
+
+
+#### Variant location in exon analysis
 
 ```R
-# variant location in exons
+View(table(subClin$EXON))
 
 table(subClin$EXON == "-")
 
 # FALSE   TRUE 
 # 153639  33854
 
-#tmp = subClin[, c(30, 40, 41)]
+tmp = subClin[, c(30, 40, 41)]
 tmp = tmp[!is.na(tmp$EXON),]
 
 
 tmp$ratio = tmp$EXON
 tmp$ratio = ifelse(tmp$ratio != "-", tmp$ratio, tmp$INTRON)
 tmp = cbind(tmp, stringr::str_split_fixed(tmp$ratio, "/", 2))
-names(tmp)[c(12:13)] <- c("nExon", "tExon")
-tmp$nratio = as.numeric(tmp$nExon)/as.numeric(tmp$tExon)
+names(tmp)[c(5:6)] <- c("nExon", "totalExon")
+tmp$nratio = as.numeric(tmp$nExon)/as.numeric(tmp$totalExon)
 # those variants with "-" as Exon and Intron will be removed since they generate NA
 # those variants encompass more than one Exon/Intron will be removed since they generate NA
 colSums(is.na(tmp))
 # class   EXON INTRON  ratio  nExon  tExon nratio 
 # 0       0      0      0      0      0     7698
 tmp = tmp[!is.na(tmp$nratio),]
+# coding 0 for introns
+tmp$nIntron = tmp$nExon
+tmp$nIntron = as.factor(ifelse(tmp$INTRON == "-", tmp$nExon, "0"))
 
-ggplot(tmp, aes(x = as.factor(class), y = nratio)) + 
-  geom_boxplot(aes(fill = class), position = position_dodge(0.9)) +
-  scale_fill_manual(values = c("#999999", "#E69F00")) + 
-  theme_bw()
+plotDf= data.frame(unclass(table(tmp$nIntron, tmp$class)))
+plotDf$ExInt = as.numeric(rownames(plotDf))
+plotDf =plotDf %>% arrange(ExInt)
 
-# discertization visualization
-## Import libraries
-library(scorecard)
-library(ggplot2)
+plotDf = plotDf[c(1:20),]
 
-# read more on discertization : https://nextjournal.com/eda/discretize-cont-var
-## Calculate bin breaks for numeric variables with respect to their relationships with the outcome variable class
-bins = scorecard::woebin(tmp[, c('nratio', 'class')], y = 'class', positive = 'conflict')
-
-# visualization
-scorecard::woebin_plot(bins$nratio)$nratio
-# interpertaion for the graph: highest probability for conflicting group is found in bin 0.96 and greater
-
-
-#############################other position based annotation#################################################
-tmp$cDNA_position = as.numeric(tmp$cDNA_position)
-tmp$CDS_position = as.numeric(tmp$CDS_position)
-tmp$Protein_position = as.numeric(tmp$Protein_position)
-tmp = tmp[!is.na(tmp$cDNA_position),]
-
-bins =scorecard::woebin(tmp[, c('cDNA_position','CDS_position','Protein_position','class')], y = 'class', positive = 'conflict')
-# visualization
-scorecard::woebin_plot(bins$cDNA_position)
-scorecard::woebin_plot(bins$CDS_position)
-scorecard::woebin_plot(bins$Protein_position)
-
-## calculate correlation between position based metrics
-summary(tmp)
-
-selc = c("cDNA_position","CDS_position","Protein_position","transcript_length", "nratio")
-
-tmp = tmp[, selc]
-for (i in 1:5){
-  tmp[,i] <- as.numeric(tmp[,i])
-}
-
-tmp = na.omit(tmp)
-
-# calculate correlation matrix
-res <- cor(tmp)
-
-png(filename = "~/clinvar/postion_metrics_corrplot.png", width = 7, height = 10, units = "in", res = 300)
-corrplot::corrplot(res, type = "upper", order = "hclust", addCoef.col = 'black', 
-         tl.col = "black", tl.srt = 45)
+plotDf = reshape2::melt(plotDf, id.var = "ExInt")
+plotDf$ExInt = as.character(plotDf$ExInt)
+#visualization
+png(filename = "~/clinvar/ExonIntron_number.png", width = 16, height = 8.135, units = "in", res = 300)
+ggplot(data = plotDf, aes(x = reorder(ExInt, -value), y = value)) +
+  geom_col(aes(fill = variable), width = 0.9)+
+  scale_fill_manual(values = c("#999999", "#E69F00")) +
+  theme_bw() + 
+  theme(axis.text.x=element_text(angle=90)) +
+  xlab("First 20 exons") + 
+  ylab("variant count in each class") +
+  theme(
+    axis.title.x = element_text(size = 12),
+    axis.text.x = element_text(size = 10),
+    axis.title.y = element_text(size = 12))
 dev.off()
 ```
-<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/postion_metrics_corrplot.png?token=AQUBCEY6TJQZ34E5DTDGBR3BBLYJK" width="400" height="500">
+Intronic variants encoded as "0". It seems more conflicting variants can be found in this group. Also based on the graph, bigger exon number, lower chance of finding conflicting variant.
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/ExonIntron_number.png" width="1800" height="500">
 
 
-#### Pathogenicity prediction scores
+#### Pathogenicity scores analysis
 
 The version of dbNSFP that VEP  used to annotate ClinVar file (version 4)  compiles prediction scores from 37 prediction algorithms (SIFT, SIFT4G, Polyphen2-HDIV, Polyphen2-HVAR, LRT, MutationTaster2, MutationAssessor, FATHMM, MetaSVM, MetaLR, CADD, CADD_hg19, VEST4, PROVEAN, FATHMM-MKL coding, FATHMM-XF coding, fitCons x 4, LINSIGHT, DANN, GenoCanyon, Eigen, Eigen-PC, M-CAP, REVEL, MutPred, MVP, MPC, PrimateAI, GEOGEN2, BayesDel_addAF, BayesDel_noAF, ClinPred, LIST-S2, ALoFT). Since different score has a different scaling system, the dbNSFP developers have created a rank score for each score so that it is comparable between scores. This can help with easier interpertaion of the result. The rank score has a scale 0 to 1 and shows the percentage of scores that are less damaging in dbNSFP, e.g., a rank score of 0.9 means the top 10% most damaging.
 
