@@ -862,7 +862,7 @@ ggplot(tmp, aes(x = as.factor(class), y = log10(transcript_length))) +
   theme_bw()
 dev.off()
 ````
-<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/transcript_length.png" width="1800" height="500">
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/transcript_length.png" width="800" height="500">
 
 
 #### Variant location in exon analysis
@@ -997,7 +997,7 @@ ggplot(plotDf, aes(x=variable, y=value, fill=class)) +
   facet_wrap(~variable, scale="free")
 dev.off()
 ```
-<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/path_predict_dist.png?token=AQUBCE7XEALJ7EMOXC4RHKDBCM56O" width="500" height="500">
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/path_predict_dist.png?token=AQUBCE7XEALJ7EMOXC4RHKDBCM56O" width="1800" height="1500">
 
 ```R
 #correlation
@@ -1007,7 +1007,7 @@ corrplot(M, type="upper", order="hclust",
          col=brewer.pal(n=8, name="RdYlBu"))
 dev.off()
 ```
-<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/path_predict_corrplot.png?token=AQUBCE7T3DRZ6HUNSPLTRYDBCM5VG" width="500" height="500">
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/path_predict_corrplot.png?token=AQUBCE7T3DRZ6HUNSPLTRYDBCM5VG" width="1800" height="1500">
 
 ```R
 # Keeping only one variable out of pairs which show cor > 0.7
@@ -1023,7 +1023,7 @@ ggplot(plotDf, aes(x=variable, y=value, fill=class)) +
   facet_wrap(~variable, scale="free")
 dev.off()
 ```
-<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/select_path_predict_dist.png?token=AQUBCE6QJUTZ5HJAPA3TZ5DBCM6G4" width="500" height="500">
+<img src="https://raw.githubusercontent.com/hamidghaedi/clinvar/main/figs/select_path_predict_dist.png?token=AQUBCE6QJUTZ5HJAPA3TZ5DBCM6G4" width="1000" height="750">
 
 
 #### Conservation scores
